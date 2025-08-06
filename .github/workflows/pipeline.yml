@@ -7,19 +7,24 @@ on:
         description: 'Path to the config file'
         required: true
         default: 'config.yml'
+        type: string
       environment:
         description: 'Environment to deploy to'
         required: false
         default: 'dev'
+        type: string
       AWS_REGION:
         description: 'AWS Region'
         required: false
         default: 'us-east-1'
+        type: string
     secrets:
       AWS_ACCESS_KEY_ID:
         required: true
+        type: string
       AWS_SECRET_ACCESS_KEY:
         required: true
+        type: string
 
 jobs:
   pipeline:
