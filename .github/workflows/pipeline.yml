@@ -1,37 +1,31 @@
-name: CI/CD Pipeline
+name: Modular CI/CD
 
 on:
   workflow_call:
     inputs:
       config-path:
-        description: 'Path to the config file'
         required: true
-        default: 'config.yml'
         type: string
       environment:
-        description: 'Environment to deploy to'
-        required: false
-        default: 'dev'
-        type: string
-      AWS_REGION:
-        description: 'AWS Region'
-        required: false
-        default: 'us-east-1'
+        required: true
         type: string
 
 jobs:
-  pipeline:
+  run-pipeline:
     runs-on: ubuntu-latest
+
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: 20
+          cache: npm
 
       - name: Install dependencies
         run: npm install
@@ -39,13 +33,39 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Load environment variables from config
+        id: load-config
+        run: |
+          echo "Reading config file..."
+          node <<'EOF' > env_vars.sh
+          const fs = require('fs');
+          const yaml = require('js-yaml');
+
+          try {
+            const config = yaml.load(fs.readFileSync('${{ inputs.config-path }}', 'utf8'));
+            const envVars = config.env || {};
+            console.log('Environment variables from config:', Object.keys(envVars));
+            
+            for (const key of Object.keys(envVars)) {
+              const secretName = `${process.env.ENVIRONMENT}_${key}`;
+              console.log(`echo "${key}=\${{ secrets.${secretName} }}" >> $GITHUB_ENV`);
+            }
+          } catch (error) {
+            console.error('Error reading config:', error.message);
+            process.exit(1);
+          }
+          EOF
+          bash env_vars.sh
+
+      - name: Show loaded env vars
+        run: |
+          echo "=== Loaded Environment Variables ==="
+          env | grep -E 'REDIS_URL|DATABASE_URL|JWT_SECRET|NODE_ENV' || echo "No specific env vars found"
+          echo "=================================="
+
       - name: Run CI/CD Pipeline
         run: |
-          echo "Running CI/CD with config: $CONFIG_PATH and env: $DEPLOY_ENV"
-          echo "Available environment variables:"
-          env | grep -E '^(REDIS_URL|DATABASE_URL|NODE_ENV|PORT)' || echo "No specific env vars found"
-          npm start -- $CONFIG_PATH $DEPLOY_ENV
-        env:
-          NODE_ENV: production
-          CONFIG_PATH: ${{ inputs.config-path }}
-          DEPLOY_ENV: ${{ inputs.environment }}
+          echo "Running CI/CD with config: ${{ inputs.config-path }} and env: ${{ inputs.environment }}"
+          echo "Database URL: $DATABASE_URL"
+          echo "Redis URL: $REDIS_URL"
+          npm start -- ${{ inputs.config-path }} ${{ inputs.environment }}

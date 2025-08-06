@@ -14,7 +14,7 @@ class CICDSystem {
 
     constructor(configPath: string = 'config.yml') {
         this.config = this.loadConfig(configPath);
-        this.setupEnvironmentVariables();
+        this.setupDynamicEnvironmentVariables();
     }
 
     private loadConfig(configPath: string): Config {
@@ -26,12 +26,30 @@ class CICDSystem {
         }
     }
 
-    private setupEnvironmentVariables(): void {
-        console.log('🔧 Setting up environment variables...');
+    private setupDynamicEnvironmentVariables(): void {
+        console.log('🔧 Setting up dynamic environment variables...');
         
         process.env.NODE_ENV = process.env.NODE_ENV || 'production';
         process.env.CONFIG_PATH = process.env.CONFIG_PATH || 'config.yml';
         process.env.DEPLOY_ENV = process.env.DEPLOY_ENV || 'dev';
+        
+        const environment = process.env.DEPLOY_ENV || 'dev';
+        console.log(`🌍 Environment: ${environment}`);
+        
+        if (this.config.env) {
+            console.log('🔗 Checking environment variables...');
+            Object.keys(this.config.env).forEach(key => {
+                const envSpecificKey = `${environment}_${key}`;
+                const value = process.env[key] || process.env[envSpecificKey];
+                
+                if (value) {
+                    console.log(`✅ ${key}: Loaded (${this.maskSensitiveData(value)})`);
+                    process.env[key] = value;
+                } else {
+                    console.log(`⚠️ ${key}: Not found`);
+                }
+            });
+        }
         
         const allEnvVars = Object.keys(process.env);
         const safeEnvVars = allEnvVars.filter(key => 
@@ -41,22 +59,6 @@ class CICDSystem {
         );
         
         console.log('📋 Available environment variables:', safeEnvVars);
-        
-        const importantVars = ['REDIS_URL', 'DATABASE_URL', 'NODE_ENV', 'PORT'];
-        importantVars.forEach(varName => {
-            const value = process.env[varName];
-            if (value) {
-                const maskedValue = this.maskSensitiveData(value);
-                console.log(`✅ ${varName}: ${maskedValue}`);
-            } else {
-                console.log(`⚠️ ${varName}: Not set`);
-            }
-        });
-        
-        if (this.config.env) {
-            console.log('🔗 Merging config environment variables...');
-            Object.assign(process.env, this.config.env);
-        }
     }
 
     private maskSensitiveData(value: string): string {
