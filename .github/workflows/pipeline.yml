@@ -40,6 +40,11 @@ jobs:
 
       - name: Build
         run: npm run build
+      - name: Run Modular CI/CD Pipeline
+        run: |
+          echo "Running CI/CD with config: ${{ inputs.config-path }} and env: ${{ inputs.environment }}"
+          env | sort
+          npx ts-node src/cli.ts ${{ inputs.config-path }} ${{ inputs.environment }}
         env:
           CONFIG_PATH: ${{ inputs.config-path }}
           DEPLOY_ENV: ${{ inputs.environment }}
