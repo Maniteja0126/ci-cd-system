@@ -1,0 +1,54 @@
+name: CI/CD Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      config-path:
+        description: 'Path to the config file'
+        required: true
+        default: 'config.yml'
+      environment:
+        description: 'Environment to deploy to'
+        required: false
+        default: 'dev'
+      AWS_REGION:
+        description: 'AWS Region'
+        required: false
+        default: 'us-east-1'
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run CI/CD Pipeline
+        run: |
+          echo "Running CI/CD with config: $CONFIG_PATH and env: $DEPLOY_ENV"
+          npm start -- $CONFIG_PATH $DEPLOY_ENV
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ inputs.AWS_REGION }}
+          NODE_ENV: production
+          CONFIG_PATH: ${{ inputs.config-path }}
+          DEPLOY_ENV: ${{ inputs.environment }}
