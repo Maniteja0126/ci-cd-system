@@ -1,0 +1,23 @@
+project:
+  type: nextjs
+  config:
+    buildOutput: .next
+    staticDir: public
+
+provider:
+  type: aws
+  config: 
+    region: us-east-1
+    s3Bucket: my-cicd-bucket
+    cloudfrontDistribution: E2Q34567890123
+
+environment: dev
+
+steps:
+  - lint
+  - build
+  - deploy
+
+env:
+  NODE_ENV: production
+  AWS_REGION: us-east-1

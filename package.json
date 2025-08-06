@@ -1,0 +1,40 @@
+{
+  "name": "cicd-system",
+  "version": "1.0.0",
+  "description": "Modular CI/CD system for multiple project types",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "dev": "ts-node src/cli.ts",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "keywords": [
+    "ci",
+    "cd",
+    "pipeline",
+    "typescript",
+    "github-actions"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-ecs": "^3.859.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/js-yaml": "^4.0.5",
+    "@types/node": "^18.19.121",
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0",
+    "prettier": "^2.8.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^4.9.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
