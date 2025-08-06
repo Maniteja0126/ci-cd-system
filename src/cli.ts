@@ -14,6 +14,7 @@ class CICDSystem {
 
     constructor(configPath: string = 'config.yml') {
         this.config = this.loadConfig(configPath);
+        this.setupEnvironmentVariables();
     }
 
     private loadConfig(configPath: string): Config {
@@ -23,6 +24,43 @@ class CICDSystem {
         } catch (error) {
             throw new Error(`Failed to load config from ${configPath}: ${error}`);
         }
+    }
+
+    private setupEnvironmentVariables(): void {
+        console.log('🔧 Setting up environment variables...');
+        
+        process.env.NODE_ENV = process.env.NODE_ENV || 'production';
+        process.env.CONFIG_PATH = process.env.CONFIG_PATH || 'config.yml';
+        process.env.DEPLOY_ENV = process.env.DEPLOY_ENV || 'dev';
+        
+        const allEnvVars = Object.keys(process.env);
+        const safeEnvVars = allEnvVars.filter(key => 
+            !key.toLowerCase().includes('secret') && 
+            !key.toLowerCase().includes('key') &&
+            !key.toLowerCase().includes('password')
+        );
+        
+        console.log('📋 Available environment variables:', safeEnvVars);
+        
+        const importantVars = ['REDIS_URL', 'DATABASE_URL', 'NODE_ENV', 'PORT'];
+        importantVars.forEach(varName => {
+            const value = process.env[varName];
+            if (value) {
+                const maskedValue = this.maskSensitiveData(value);
+                console.log(`✅ ${varName}: ${maskedValue}`);
+            } else {
+                console.log(`⚠️ ${varName}: Not set`);
+            }
+        });
+        
+        if (this.config.env) {
+            console.log('🔗 Merging config environment variables...');
+            Object.assign(process.env, this.config.env);
+        }
+    }
+
+    private maskSensitiveData(value: string): string {
+        return value.replace(/([^:]+:\/\/[^:]+:)([^@]+)(@)/, '$1***$3');
     }
 
     private createProject() {
