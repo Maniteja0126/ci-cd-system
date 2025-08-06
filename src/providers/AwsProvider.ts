@@ -1,76 +1,90 @@
-import { Provider } from '../core/Provider';
+import {
+    ECSClient,
+    UpdateServiceCommand,
+    DescribeServicesCommand,
+  } from "@aws-sdk/client-ecs";
+  
+import { Provider } from "../core/Provider";
 
-export class AwsProvider extends Provider {
-  constructor(config: any) {
-    super('aws', config);
-  }
-
-  isDeploymentRequired(): boolean {
-    return !!(this.config?.s3Bucket || this.config?.lambdaFunction || this.config?.ecsService);
-  }
-
-  async deploy(environment: string): Promise<void> {
-    this.log(`Deploying to AWS ${environment} environment...`);
+export  class AwsProvider extends Provider {
+    private ecsClient  : ECSClient;
     
-    try {
-      const credentials = await this.getCredentials();
-      this.log('AWS credentials retrieved successfully');
-      
-      if (this.config?.s3Bucket) {
-        await this.deployToS3(environment, credentials);
-      }
-      
-      if (this.config?.lambdaFunction) {
-        await this.deployToLambda(environment, credentials);
-      }
-      
-      if (this.config?.ecsService) {
-        await this.deployToECS(environment, credentials);
-      }
-      
-      if (this.config?.cloudFrontDistribution) {
-        await this.updateCloudFront(environment, credentials);
-      }
-      
-      this.log(`Successfully deployed to ${environment}`);
-    } catch (error) {
-      this.error(`AWS deployment failed: ${error}`);
-      throw error;
+    constructor(config : any){
+        super("AWS" , config);
+
+        this.ecsClient = new ECSClient({
+            region: process.env.AWS_REGION || 'us-east-1',
+            credentials: {
+              accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+            },
+        });
     }
-  }
 
-  async getCredentials(): Promise<any> {
-    this.log('Retrieving AWS credentials...');
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      region: process.env.AWS_REGION || this.config?.region || 'us-east-1'
-    };
-  }
+    isDeploymentRequired(): boolean {
+        return !!(this.config?.dev?.cluster || this.config?.staging?.cluster || this.config?.prod?.cluster);
+    }
 
-  private async deployToS3(environment: string, credentials: any): Promise<void> {
-    this.log(`Deploying to S3 bucket: ${this.config.s3Bucket}`);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    this.log(`S3 deployment completed`);
-  }
+    async deploy(environment : string) : Promise<void> {
+        if (!this.config[environment]) {
+            throw new Error(`No configuration found for environment: ${environment}`);
+        }
+        
+        const clusterName = this.config[environment].cluster;
+        const serviceName = this.config[environment].service;
 
-  private async deployToLambda(environment: string, credentials: any): Promise<void> {
-    this.log(`Deploying Lambda function: ${this.config.lambdaFunction}`);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    this.log(`Lambda deployment completed`);
-  }
+        if(!clusterName || !serviceName){
+            throw new Error("Cluster and service names are required");
+        }
+        this.log(`Deploying to AWS ECS - Cluster: ${clusterName}, Service: ${serviceName}`);
 
-  private async deployToECS(environment: string, credentials: any): Promise<void> {
-    this.log(`Deploying ECS service: ${this.config.ecsService}`);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    this.log(`ECS deployment completed`);
-  }
+        try{
+            const updateResult = await this.ecsClient.send(
+                new UpdateServiceCommand({
+                  cluster: clusterName,
+                  service: serviceName,
+                  forceNewDeployment: true,
+                })
+              );
 
-  private async updateCloudFront(environment: string, credentials: any): Promise<void> {
-    this.log(`Updating CloudFront distribution: ${this.config.cloudFrontDistribution}`);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    this.log(`CloudFront update completed`);
-  }
+            this.log(`Update initiated: ${updateResult.service?.serviceArn}`);
+
+            await this.waitForServiceStable(clusterName , serviceName);
+            this.log(`Deployment completed successfully`);
+
+        }catch(error : any){
+            this.error(`Deployment failed: ${error.message || error}`);
+            throw error;
+        }
+    }
+
+    async getCredentials(): Promise<any> {
+        return {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+          region: process.env.AWS_REGION || 'us-east-1',
+        };
+      }
+
+    private async waitForServiceStable(cluster: string, service: string) {
+        this.log('Waiting for ECS service to become stable...');
+        let attempts = 0;
+      
+        while (attempts < 10) {
+          const result = await this.ecsClient.send(
+            new DescribeServicesCommand({ cluster, services: [service] })
+          );
+      
+          const status = result.services?.[0]?.deployments?.[0]?.rolloutState;
+          if (status === 'COMPLETED') {
+            this.log('ECS service is stable');
+            return;
+          }
+      
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          attempts++;
+        }
+      
+        throw new Error('ECS service did not stabilize in time');
+      }
 }

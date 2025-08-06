@@ -33,6 +33,8 @@ jobs:
       - name: Run CI/CD Pipeline
         run: |
           echo "Running CI/CD with config: ${{ inputs.config-path }} and env: ${{ inputs.environment }}"
+          echo "All environment variables from calling workflow:"
+          env | sort
           npm start -- ${{ inputs.config-path }} ${{ inputs.environment }}
         env:
           NODE_ENV: production
