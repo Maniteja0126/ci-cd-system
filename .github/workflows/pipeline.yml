@@ -9,6 +9,8 @@ on:
       environment:
         required: true
         type: string
+      secrets:
+        inherit: true
 
 jobs:
   run-pipeline:
