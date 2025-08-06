@@ -9,7 +9,7 @@ on:
       environment:
         required: true
         type: string
-      secrets:
+    secrets:
         inherit: true
 
 jobs:
