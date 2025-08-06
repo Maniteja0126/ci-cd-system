@@ -16,6 +16,8 @@ jobs:
   run-pipeline:
     runs-on: ubuntu-latest
 
+    env: ${{ secrets }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
