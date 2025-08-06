@@ -10,10 +10,7 @@ on:
         required: true
         type: string
     secrets:
-      REDIS_URL:
-        required: false
-      DATABASE_URL:
-        required: false
+      inherit: true
 
 jobs:
   run-pipeline:

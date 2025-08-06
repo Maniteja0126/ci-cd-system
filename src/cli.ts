@@ -37,13 +37,22 @@ class CICDSystem {
         console.log(`🌍 Environment: ${environment}`);
         
         if (this.config.env) {
-            console.log('🔗 Checking environment variables...');
+            console.log('🔗 Processing environment variables from config...');
             Object.keys(this.config.env).forEach(key => {
-                const envSpecificKey = `${environment}_${key}`;
-                const value = process.env[key] || process.env[envSpecificKey];
+                let value = this.config?.env?.[key];
                 
-                if (value) {
-                    console.log(`✅ ${key}: Loaded (${this.maskSensitiveData(value)})`);
+                if (typeof value === 'string' && value.includes('${')) {
+                    value = this.substituteEnvironmentVariables(value);
+                }
+                
+                const envSpecificKey = `${environment}_${key}`;
+                const envValue = process.env[key] || process.env[envSpecificKey];
+                
+                if (envValue) {
+                    console.log(`✅ ${key}: Loaded from environment (${this.maskSensitiveData(envValue)})`);
+                    process.env[key] = envValue;
+                } else if (value && value !== '') {
+                    console.log(`✅ ${key}: Loaded from config (${this.maskSensitiveData(value)})`);
                     process.env[key] = value;
                 } else {
                     console.log(`⚠️ ${key}: Not found`);
@@ -63,6 +72,19 @@ class CICDSystem {
 
     private maskSensitiveData(value: string): string {
         return value.replace(/([^:]+:\/\/[^:]+:)([^@]+)(@)/, '$1***$3');
+    }
+
+    private substituteEnvironmentVariables(value: string): string {
+        return value.replace(/\$\{([^}]+)\}/g, (match, varName) => {
+            const envValue = process.env[varName];
+            if (envValue) {
+                console.log(`🔄 Substituting ${match} with environment variable ${varName}`);
+                return envValue;
+            } else {
+                console.log(`⚠️ Environment variable ${varName} not found for substitution`);
+                return match; // Keep the original placeholder if not found
+            }
+        });
     }
 
     private createProject() {
