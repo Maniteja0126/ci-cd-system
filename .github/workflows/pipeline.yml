@@ -19,10 +19,7 @@ on:
         default: 'us-east-1'
         type: string
     secrets:
-      AWS_ACCESS_KEY_ID:
-        required: false
-      AWS_SECRET_ACCESS_KEY:
-        required: false
+      inherit: true
 
 jobs:
   pipeline:
@@ -47,11 +44,10 @@ jobs:
       - name: Run CI/CD Pipeline
         run: |
           echo "Running CI/CD with config: $CONFIG_PATH and env: $DEPLOY_ENV"
+          echo "Available environment variables:"
+          env | grep -E '^(REDIS_URL|DATABASE_URL|NODE_ENV|PORT)' || echo "No specific env vars found"
           npm start -- $CONFIG_PATH $DEPLOY_ENV
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID || '' }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY || '' }}
-          AWS_REGION: ${{ inputs.AWS_REGION }}
           NODE_ENV: production
           CONFIG_PATH: ${{ inputs.config-path }}
           DEPLOY_ENV: ${{ inputs.environment }}
