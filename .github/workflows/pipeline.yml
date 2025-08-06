@@ -39,6 +39,3 @@ jobs:
           echo "All environment variables from calling workflow:"
           env | sort
           npm start -- ${{ inputs.config-path }} ${{ inputs.environment }}
-        env:
-          CONFIG_PATH: ${{ inputs.config-path }}
-          DEPLOY_ENV: ${{ inputs.environment }}
