@@ -10,7 +10,7 @@ on:
         required: true
         type: string
     secrets:
-        inherit: true
+      inherit: true
 
 jobs:
   run-pipeline:
