@@ -41,6 +41,5 @@ jobs:
           env | sort
           npm start -- ${{ inputs.config-path }} ${{ inputs.environment }}
         env:
-          NODE_ENV: production
           CONFIG_PATH: ${{ inputs.config-path }}
           DEPLOY_ENV: ${{ inputs.environment }}
