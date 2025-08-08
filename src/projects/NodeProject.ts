@@ -38,10 +38,14 @@ export class NodeProject extends Project {
   }
 
   getDeploymentCommands(): string[] {
+    const appName = this.config.appName || 'app';
     return [
-        'npm install',
-        `npm run ${this.config.buildScript || 'build'}`,
-        'pm2 restart all || pm2 start npm --name "app" -- start'
+      'npm install --production',
+      `npm run ${this.config.buildScript || 'build'}`,
+      `pm2 delete ${appName} || true`,
+      `pm2 start npm --name "${appName}" -- start`,
+      'pm2 save',
+      'sudo pm2 startup || true'
     ];
-}
+  }
 }
