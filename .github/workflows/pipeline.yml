@@ -66,12 +66,20 @@ jobs:
         run: npm run build
         working-directory: project
 
-      - name: Create SSH key file (if EC2 deployment)
-        if: ${{ secrets.EC2_PRIVATE_KEY != '' }}
+      - name: Create SSH key file
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/deploy-key.pem
-          chmod 600 ~/.ssh/deploy-key.pem
+          if [ -n "$EC2_PRIVATE_KEY" ]; then
+            echo "$EC2_PRIVATE_KEY" > ~/.ssh/deploy-key.pem
+            chmod 600 ~/.ssh/deploy-key.pem
+            echo "✅ SSH key created successfully"
+          else
+            echo "⚠️ No EC2 private key provided, skipping SSH key creation"
+            touch ~/.ssh/deploy-key.pem
+            chmod 600 ~/.ssh/deploy-key.pem
+          fi
+        env:
+          EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
 
       - name: Run Modular CI/CD Pipeline
         run: |
