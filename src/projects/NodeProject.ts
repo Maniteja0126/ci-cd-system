@@ -40,7 +40,7 @@ export class NodeProject extends Project {
   getDeploymentCommands(): string[] {
     const appName = this.config.appName || 'app';
     return [
-      'npm install --production',
+      'npm install',
       `npm run ${this.config.buildScript || 'build'}`,
       `pm2 delete ${appName} || true`,
       `pm2 start npm --name "${appName}" -- start`,
