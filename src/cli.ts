@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 import { Config } from './types';
-import { NextJsProject } from './projects/NextJsProject';
 import { NodeProject } from './projects/NodeProject';
 import { RustProject } from './projects/RustProject';
 import { AwsProvider } from './providers/AwsProvider';
@@ -82,7 +81,7 @@ class CICDSystem {
                 return envValue;
             } else {
                 console.log(`⚠️ Environment variable ${varName} not found for substitution`);
-                return match; // Keep the original placeholder if not found
+                return match; 
             }
         });
     }
@@ -91,8 +90,6 @@ class CICDSystem {
         const { type, config } = this.config.project;
 
         switch (type) {
-            case 'nextjs':
-                return new NextJsProject(config);
             case 'node':
                 return new NodeProject(config);
             case 'rust':
@@ -120,7 +117,7 @@ class CICDSystem {
             case 'build':
                 return new BuildAction(project, this.config);
             case 'deploy':
-                return new DeployAction(provider, this.config.environment, this.config);
+                return new DeployAction(provider, this.config.environment, project, this.config);
             default:
                 throw new Error(`Unsupported action: ${actionName}`);
         }

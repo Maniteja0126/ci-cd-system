@@ -10,6 +10,7 @@ export abstract class Project {
     abstract getBuildCommand(): string;
     abstract getTestCommand(): string;
     abstract getLintCommand(): string;
+    abstract getDeploymentCommands(): string[];
 
     getType() : string {
         return this.type;

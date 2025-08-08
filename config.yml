@@ -1,15 +1,17 @@
 project:
-  type: nextjs
+  type: node 
   config:
-    buildOutput: .next
-    staticDir: public
+    buildScript: build
+    startScript: start
 
 provider:
   type: aws
-  config: 
-    region: us-east-1
-    s3Bucket: my-cicd-bucket
-    cloudfrontDistribution: E2Q34567890123
+  config:
+    dev:
+      host: YOUR-EC2-INSTANCE-IP
+      user: ubuntu
+      keyPath: ~/.ssh/your-key.pem
+      appPath: /home/ubuntu/your-nextjs-app
 
 environment: dev
 
@@ -21,3 +23,5 @@ steps:
 env:
   NODE_ENV: production
   AWS_REGION: us-east-1
+  REDIS_URL: ${REDIS_URL}
+  DATABASE_URL: ${DATABASE_URL}

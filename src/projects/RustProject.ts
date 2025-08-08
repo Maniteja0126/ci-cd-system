@@ -17,4 +17,13 @@ export class RustProject extends Project {
   getTestCommand(): string {
     return 'cargo test';
   }
+
+  getDeploymentCommands(): string[] {
+    const appName = this.config.appName || 'app';
+    return [
+        'cargo build --release',
+        `pkill -f ${appName} || true`,
+        `nohup ./target/release/${appName} > app.log 2>&1 &`
+    ];
+}
 }

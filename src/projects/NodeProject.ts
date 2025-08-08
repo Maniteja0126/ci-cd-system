@@ -36,4 +36,12 @@ export class NodeProject extends Project {
   getTestCommand(): string {
     return this.getCommand('test');
   }
+
+  getDeploymentCommands(): string[] {
+    return [
+        'npm install',
+        `npm run ${this.config.buildScript || 'build'}`,
+        'pm2 restart all || pm2 start npm --name "app" -- start'
+    ];
+}
 }

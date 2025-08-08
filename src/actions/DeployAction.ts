@@ -1,14 +1,17 @@
 import { Action } from '../core/Action';
 import { Provider } from '../core/Provider';
+import { Project } from '../core/Project';
 
 export class DeployAction extends Action {
     private provider : Provider;
     private environment : string;
+    private project? : Project;
 
-    constructor(provider : Provider , environment : string , config : any) {
+    constructor(provider : Provider , environment : string , project : Project , config : any) {
         super("Deploy" , config);
         this.provider = provider;
         this.environment = environment;
+        this.project = project;
     }
 
     async run() : Promise<void> {
@@ -24,7 +27,7 @@ export class DeployAction extends Action {
                this.log('- cloudFrontDistribution: For CDN updates');
                return;
             }
-            await this.provider.deploy(this.environment);
+            await this.provider.deploy(this.environment , this.project);
             this.log(`Deployment to ${this.environment} completed successfully`);
         } catch (error : any) {
             this.error(`Deployment failed: ${error.message || error}`);
